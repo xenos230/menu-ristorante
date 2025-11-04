@@ -19,7 +19,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database-compat.js"></script>
   <script>
-    // Usa la stessa configurazione di index.html
+    // Configurazione Firebase identica all'index
     const firebaseConfig = {
       apiKey: "AIzaSyBjxFBr2zRGyQkwmWLLGtKNOkrx6501ssI",
       authDomain: "menu--mela.firebaseapp.com",
@@ -33,7 +33,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Visualizza ordini in formato testo copiabile
+    // Visualizza tutti gli ordini in forma testo per copia/incolla
     function aggiornaAdmin() {
       db.ref("ordini").once("value").then(snapshot => {
         let testo = '';
@@ -47,7 +47,7 @@
     aggiornaAdmin();
     setInterval(aggiornaAdmin, 8000); // aggiorna ogni 8 secondi
 
-    // Copia ordini
+    // Copia ordini negli appunti
     function copiaOrdini() {
       navigator.clipboard.writeText(document.getElementById('ordiniText').textContent);
       alert("Ordini copiati!");
