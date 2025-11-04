@@ -28,7 +28,7 @@
   <div id="listaOrdini"></div>
 
 <script>
-const URL_API = "https://script.google.com/macros/s/AKfycbwDgThhPbcLXejr62QHSE1Dg99B3kmBTefHLQlYfyjjmF5JrnjEAeyGvbCKYyvRk1wTPA/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbyvAVwJI2gfUQFdGtp1ljm5XsDkIiVZj1M8M2EMX9VUlFUE-NvGdeExDVim9paoMQRGbw/exec";
 
 // Invio ordine
 document.getElementById("ordineForm").onsubmit = function(e) {
@@ -56,15 +56,15 @@ function aggiornaOrdini() {
   fetch(URL_API)
     .then(r => r.json())
     .then(dati => {
-      // Opzionale: Mostra il primo campo del foglio come "menu" se vuoi
-      if(dati.length>0) {
+      // Mostra menu dalla prima cella/riga (personalizzabile)
+      if(dati.length > 0 && dati[0][0])
         document.getElementById("menuSheet").innerHTML =
-          "<strong>" + (dati[0][0] || "Inserire il menù dal foglio!") + "</strong>";
-      }
-      // Lista ordini (salta eventuale prima riga se header)
+          "<strong>" + dati[0][0] + "</strong>";
+
+      // Lista ordini (salta eventuale prima riga header)
       let html = '<ul>';
       for(let i=1; i<dati.length; i++) {
-        if(dati[i][0]) // solo se c'è un nome valido
+        if(dati[i][0]) // solo se nome valido
           html += `<li>${dati[i][0]}: ${dati[i][1]} <span style="color:#888;font-size:80%">(${dati[i][2]||''})</span></li>`;
       }
       html += '</ul>';
