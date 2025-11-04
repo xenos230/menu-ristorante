@@ -5,20 +5,27 @@
   <title>Admin - Menu e Ordini</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    textarea { width: 100%; }
+    input, select, button { margin-top: 10px; display: block; }
+    pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; }
+    #aiHint { margin-top: 10px; font-style: italic; color: gray; }
+  </style>
 </head>
 <body>
   <h1>Admin: Inserisci il menu</h1>
-  <input type="date" id="menuDate" value="">
-  <br>
-  <textarea id="menuTextArea" rows="6" cols="40" placeholder="Scrivi qui il menu..."></textarea>
-  <br>
+  <input type="date" id="menuDate">
+  <textarea id="menuTextArea" rows="6" placeholder="Scrivi qui il menu..."></textarea>
   <button id="saveMenu">Salva menu</button>
 
   <h2>Ordini ricevuti</h2>
+  <label for="selectDate">Seleziona data:</label>
   <select id="selectDate"></select>
   <p>Totale ordini: <span id="countAdmin">0</span></p>
   <pre id="ordersList">(nessun ordine)</pre>
   <button id="copyBtn">Copia ordini</button>
+  <p id="aiHint"></p>
 
   <script>
     const firebaseConfig = {
@@ -74,9 +81,14 @@
     }
 
     select.addEventListener('change', () => loadOrders(select.value));
+
     document.getElementById('copyBtn').addEventListener('click', () => {
       const text = document.getElementById('ordersList').textContent;
-      navigator.clipboard.writeText(text).then(() => alert('Ordini copiati negli appunti'));
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Ordini copiati negli appunti');
+        document.getElementById('aiHint').textContent =
+          'Togli i nomi e conta le cose simili scritte e prepara un testo per effettuare un ordine con ad esempio:\nx3 piatto1\nx2 piatto2\nx5 pizza';
+      });
     });
 
     loadOrders(select.value);
