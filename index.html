@@ -37,10 +37,10 @@
       document.getElementById('counter').textContent = snap.numChildren();
     });
 
-   function canOrderNow() {
-  return true; // disattivato per test
+  function canOrderNow() {
+  const h = new Date().getHours();
+  return h >= 0 && h < 12;
 }
-
     document.getElementById('sendBtn').addEventListener('click', () => {
       if (!canOrderNow()) {
         alert('Puoi ordinare solo dopo mezzanotte e prima di mezzogiorno.');
@@ -60,4 +60,5 @@
   </script>
 </body>
 </html>
+
 
