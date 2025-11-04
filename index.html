@@ -2,73 +2,62 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Menù Ristorante - Ordina</title>
-  <style>
-    body { font-family: sans-serif; margin: 2em;}
-    input, button { margin: 0.2em;}
-    ul { list-style: none; padding-left: 0;}
-  </style>
+  <title>Ordina il pranzo</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h1>Menù Ristorante</h1>
+  <h1>Menu di oggi</h1>
+  <pre id="menuText">Caricamento...</pre>
 
-  <form id="ordineForm">
-    Nome: <input name="nome" required>
-    Ordine: <input name="ordine" required>
-    <button type="submit">Invia</button>
-  </form>
-  <div id="result"></div>
-  <h2>Ordini ricevuti:</h2>
-  <div id="listaOrdini"></div>
+  <h2>Invia il tuo ordine</h2>
+  <input id="name" placeholder="Il tuo nome">
+  <input id="order" placeholder="Il tuo ordine">
+  <button id="sendBtn">Invia ordine</button>
 
-  <!-- 1. Inserire SEMPRE PRIMA questi -->
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database-compat.js"></script>
+  <p>Persone al tavolo: <span id="counter">0</span></p>
 
-  <!-- 2. Solo DOPO, il codice JS personalizzato -->
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyBjxFBr2zRGyQkwmWLLGtKNOkrx6501ssI",
-      authDomain: "menu--mela.firebaseapp.com",
-      projectId: "menu--mela",
-      storageBucket: "menu--mela.firebasestorage.app",
-      messagingSenderId: "193263620977",
-      appId: "1:193263620977:web:6c91785bb8cd88d23c5cd0",
-      measurementId: "G-XNWLWL2RMC",
       databaseURL: "https://menu--mela-default-rtdb.europe-west1.firebasedatabase.app/"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    document.getElementById("ordineForm").onsubmit = function(e) {
-      e.preventDefault();
-      const nome = this.nome.value.trim();
-      const ordine = this.ordine.value.trim();
-      if (!nome || !ordine) return;
-      db.ref("ordini").push({
-        nome,
-        ordine,
-        data: new Date().toLocaleString()
-      }, function(error) {
-        document.getElementById("result").textContent = error ? "Invio fallito!" : "Ordine inviato!";
-        aggiornaOrdini();
-      });
-      this.reset();
-    };
+    const today = new Date().toISOString().slice(0, 10);
+    const menuRef = db.ref('menu/' + today);
+    const ordersRef = db.ref('orders/' + today);
 
-    function aggiornaOrdini() {
-      db.ref("ordini").once("value").then(snapshot => {
-        let html = '<ul>';
-        snapshot.forEach(child => {
-          const o = child.val();
-          html += `<li>${o.nome}: ${o.ordine} <span style="color:#888;font-size:80%">(${o.data})</span></li>`;
-        });
-        html += '</ul>';
-        document.getElementById("listaOrdini").innerHTML = html;
-      });
+    menuRef.on('value', snap => {
+      const m = snap.val();
+      document.getElementById('menuText').textContent = m ? m.text : 'Menu non disponibile';
+    });
+
+    ordersRef.on('value', snap => {
+      document.getElementById('counter').textContent = snap.numChildren();
+    });
+
+    function canOrderNow() {
+      const h = new Date().getHours();
+      return h >= 0 && h < 12;
     }
-    aggiornaOrdini();
-    setInterval(aggiornaOrdini, 8000);
+
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      if (!canOrderNow()) {
+        alert('Puoi ordinare solo dopo mezzanotte e prima di mezzogiorno.');
+        return;
+      }
+      const name = document.getElementById('name').value.trim();
+      const order = document.getElementById('order').value.trim();
+      if (!name || !order) {
+        alert('Inserisci nome e ordine.');
+        return;
+      }
+      ordersRef.push({ name, order, ts: Date.now() }).then(() => {
+        document.getElementById('name').value = '';
+        document.getElementById('order').value = '';
+      });
+    });
   </script>
 </body>
 </html>
