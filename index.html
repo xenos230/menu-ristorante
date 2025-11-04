@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Admin - Menu e Ordini</title>
+  <title>Ordina il pranzo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -21,7 +21,7 @@
       margin-bottom: 10px;
     }
 
-    input, select, textarea, button {
+    input, button {
       width: 100%;
       font-size: 1em;
       margin-top: 10px;
@@ -32,14 +32,14 @@
     }
 
     button {
-      background-color: #007bff;
+      background-color: #28a745;
       color: white;
       border: none;
       cursor: pointer;
     }
 
     button:hover {
-      background-color: #0056b3;
+      background-color: #218838;
     }
 
     pre {
@@ -51,11 +51,8 @@
       margin-top: 10px;
     }
 
-    #aiHint {
-      margin-top: 10px;
-      font-style: italic;
-      color: #555;
-      white-space: pre-wrap;
+    #counter {
+      font-weight: bold;
     }
 
     @media screen and (max-width: 480px) {
@@ -67,7 +64,7 @@
         font-size: 1.2em;
       }
 
-      input, select, textarea, button {
+      input, button {
         font-size: 1em;
         padding: 8px;
       }
@@ -75,18 +72,17 @@
   </style>
 </head>
 <body>
-  <h1>Admin: Inserisci il menu</h1>
-  <input type="date" id="menuDate">
-  <textarea id="menuTextArea" rows="6" placeholder="Scrivi qui il menu..."></textarea>
-  <button id="saveMenu">Salva menu</button>
+  <h1>Menu di oggi</h1>
+  <pre id="menuText">Caricamento...</pre>
 
-  <h2>Ordini ricevuti</h2>
-  <label for="selectDate">Seleziona data:</label>
-  <select id="selectDate"></select>
-  <p>Totale ordini: <span id="countAdmin">0</span></p>
-  <pre id="ordersList">(nessun ordine)</pre>
-  <button id="copyBtn">Copia ordini</button>
-  <p id="aiHint"></p>
+  <h2>Invia il tuo ordine</h2>
+  <div id="orderForm">
+    <input id="name" placeholder="Il tuo nome">
+    <input id="order" placeholder="Il tuo ordine">
+    <button id="sendBtn">Invia ordine</button>
+  </div>
+
+  <p>Persone al tavolo: <span id="counter">0</span></p>
 
   <script>
     const firebaseConfig = {
@@ -95,67 +91,40 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function todayISO(offset = 0) {
-      const d = new Date();
-      d.setDate(d.getDate() + offset);
-      return d.toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    const menuRef = db.ref('menu/' + today);
+    const ordersRef = db.ref('orders/' + today);
+
+    menuRef.on('value', snap => {
+      const m = snap.val();
+      document.getElementById('menuText').textContent = m ? m.text : 'Menu non disponibile';
+    });
+
+    ordersRef.on('value', snap => {
+      document.getElementById('counter').textContent = snap.numChildren();
+    });
+
+    function canOrderNow() {
+      const h = new Date().getHours();
+      return h >= 0 && h < 12;
     }
 
-    const select = document.getElementById('selectDate');
-    for (let i = -1; i <= 2; i++) {
-      const d = todayISO(i);
-      const opt = document.createElement('option');
-      opt.value = d;
-      opt.textContent = d;
-      select.appendChild(opt);
-    }
-    select.value = todayISO();
-
-    document.getElementById('saveMenu').addEventListener('click', () => {
-      const d = document.getElementById('menuDate').value || todayISO();
-      const text = document.getElementById('menuTextArea').value.trim();
-      if (!text) {
-        alert('Inserisci il testo del menu.');
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      if (!canOrderNow()) {
+        alert('Puoi ordinare solo dopo mezzanotte e prima di mezzogiorno.');
         return;
       }
-      db.ref('menu/' + d).set({ text, ts: Date.now() });
-      db.ref('currentDate').set(d);
-      alert('Menu salvato per ' + d);
-    });
-
-    function loadOrders(d) {
-      const menuRef = db.ref('menu/' + d);
-      const ordersRef = db.ref('orders/' + d);
-
-      menuRef.once('value', s => {
-        const m = s.val();
-        document.getElementById('menuTextArea').value = m ? m.text : '';
-        document.getElementById('menuDate').value = d;
-      });
-
-      ordersRef.on('value', snap => {
-        const o = snap.val() || {};
-        const list = Object.values(o).map(it => `${it.name}: ${it.order}`).join('\n');
-        document.getElementById('ordersList').textContent = list || '(nessun ordine)';
-        document.getElementById('countAdmin').textContent = Object.keys(o).length;
-      });
-    }
-
-    select.addEventListener('change', () => loadOrders(select.value));
-
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const ordersText = document.getElementById('ordersList').textContent;
-      const aiInstructions =
-        'Togli i nomi e conta le cose simili scritte e prepara un testo per effettuare un ordine con ad esempio:\nx3 piatto1\nx2 piatto2\nx5 pizza';
-      const fullText = ordersText + '\n\n' + aiInstructions;
-
-      navigator.clipboard.writeText(fullText).then(() => {
-        alert('Ordini + istruzioni copiati negli appunti');
-        document.getElementById('aiHint').textContent = aiInstructions;
+      const name = document.getElementById('name').value.trim();
+      const order = document.getElementById('order').value.trim();
+      if (!name || !order) {
+        alert('Inserisci nome e ordine.');
+        return;
+      }
+      ordersRef.push({ name, order, ts: Date.now() }).then(() => {
+        document.getElementById('name').value = '';
+        document.getElementById('order').value = '';
       });
     });
-
-    loadOrders(select.value);
   </script>
 </body>
 </html>
