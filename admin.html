@@ -10,7 +10,7 @@
     textarea { width: 100%; }
     input, select, button { margin-top: 10px; display: block; }
     pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; }
-    #aiHint { margin-top: 10px; font-style: italic; color: gray; }
+    #aiHint { margin-top: 10px; font-style: italic; color: gray; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -83,11 +83,14 @@
     select.addEventListener('change', () => loadOrders(select.value));
 
     document.getElementById('copyBtn').addEventListener('click', () => {
-      const text = document.getElementById('ordersList').textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Ordini copiati negli appunti');
-        document.getElementById('aiHint').textContent =
-          'Togli i nomi e conta le cose simili scritte e prepara un testo per effettuare un ordine con ad esempio:\nx3 piatto1\nx2 piatto2\nx5 pizza';
+      const ordersText = document.getElementById('ordersList').textContent;
+      const aiInstructions =
+        'Togli i nomi e conta le cose simili scritte e prepara un testo per effettuare un ordine con ad esempio:\nx3 piatto1\nx2 piatto2\nx5 pizza';
+      const fullText = ordersText + '\n\n' + aiInstructions;
+
+      navigator.clipboard.writeText(fullText).then(() => {
+        alert('Ordini + istruzioni copiati negli appunti');
+        document.getElementById('aiHint').textContent = aiInstructions;
       });
     });
 
