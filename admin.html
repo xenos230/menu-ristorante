@@ -2,56 +2,84 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Admin - Ordini tavolo</title>
-  <style>
-    body { font-family: sans-serif; margin: 2em;}
-    pre { background: #eee; padding: 1em; }
-    button { font-size: 1em; margin: 1em 0; }
-  </style>
+  <title>Admin - Menu e Ordini</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h1>Pannello Admin – Copia ordini tavolo</h1>
-  <button onclick="copiaOrdini()">Copia negli appunti!</button>
-  <h2>Ordini ricevuti:</h2>
-  <pre id="ordiniText">Caricamento...</pre>
+  <h1>Admin: Inserisci il menu</h1>
+  <input type="date" id="menuDate" value="">
+  <br>
+  <textarea id="menuTextArea" rows="6" cols="40" placeholder="Scrivi qui il menu..."></textarea>
+  <br>
+  <button id="saveMenu">Salva menu</button>
 
-  <!-- Firebase CDN compatibile con Realtime Database -->
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database-compat.js"></script>
+  <h2>Ordini ricevuti</h2>
+  <select id="selectDate"></select>
+  <p>Totale ordini: <span id="countAdmin">0</span></p>
+  <pre id="ordersList">(nessun ordine)</pre>
+  <button id="copyBtn">Copia ordini</button>
+
   <script>
-    // Configurazione Firebase identica all'index
     const firebaseConfig = {
-      apiKey: "AIzaSyBjxFBr2zRGyQkwmWLLGtKNOkrx6501ssI",
-      authDomain: "menu--mela.firebaseapp.com",
-      projectId: "menu--mela",
-      storageBucket: "menu--mela.firebasestorage.app",
-      messagingSenderId: "193263620977",
-      appId: "1:193263620977:web:6c91785bb8cd88d23c5cd0",
-      measurementId: "G-XNWLWL2RMC",
       databaseURL: "https://menu--mela-default-rtdb.europe-west1.firebasedatabase.app/"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Visualizza tutti gli ordini in forma testo per copia/incolla
-    function aggiornaAdmin() {
-      db.ref("ordini").once("value").then(snapshot => {
-        let testo = '';
-        snapshot.forEach(child => {
-          const o = child.val();
-          testo += `${o.nome}: ${o.ordine} (${o.data})\n`;
-        });
-        document.getElementById('ordiniText').textContent = testo.trim() ? testo : "Nessun ordine ricevuto.";
+    function todayISO(offset = 0) {
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return d.toISOString().slice(0, 10);
+    }
+
+    const select = document.getElementById('selectDate');
+    for (let i = -1; i <= 2; i++) {
+      const d = todayISO(i);
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      select.appendChild(opt);
+    }
+    select.value = todayISO();
+
+    document.getElementById('saveMenu').addEventListener('click', () => {
+      const d = document.getElementById('menuDate').value || todayISO();
+      const text = document.getElementById('menuTextArea').value.trim();
+      if (!text) {
+        alert('Inserisci il testo del menu.');
+        return;
+      }
+      db.ref('menu/' + d).set({ text, ts: Date.now() });
+      db.ref('currentDate').set(d);
+      alert('Menu salvato per ' + d);
+    });
+
+    function loadOrders(d) {
+      const menuRef = db.ref('menu/' + d);
+      const ordersRef = db.ref('orders/' + d);
+
+      menuRef.once('value', s => {
+        const m = s.val();
+        document.getElementById('menuTextArea').value = m ? m.text : '';
+        document.getElementById('menuDate').value = d;
+      });
+
+      ordersRef.on('value', snap => {
+        const o = snap.val() || {};
+        const list = Object.values(o).map(it => `${it.name}: ${it.order}`).join('\n');
+        document.getElementById('ordersList').textContent = list || '(nessun ordine)';
+        document.getElementById('countAdmin').textContent = Object.keys(o).length;
       });
     }
-    aggiornaAdmin();
-    setInterval(aggiornaAdmin, 8000); // aggiorna ogni 8 secondi
 
-    // Copia ordini negli appunti
-    function copiaOrdini() {
-      navigator.clipboard.writeText(document.getElementById('ordiniText').textContent);
-      alert("Ordini copiati!");
-    }
+    select.addEventListener('change', () => loadOrders(select.value));
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const text = document.getElementById('ordersList').textContent;
+      navigator.clipboard.writeText(text).then(() => alert('Ordini copiati negli appunti'));
+    });
+
+    loadOrders(select.value);
   </script>
 </body>
 </html>
