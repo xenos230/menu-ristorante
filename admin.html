@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Menu & Ordini</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    textarea { width: 80%; height: 4em; }
+    pre { background: #eee; padding: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Pannello Admin</h1>
+  <form id="menuForm">
+    Inserisci/Modifica menu del giorno:<br>
+    <textarea id="menuInput"></textarea><br>
+    <button type="submit">Salva menu (azzera ordini)</button>
+  </form>
+  
+  <h3>Ordini ricevuti:</h3>
+  <pre id="ordiniText"></pre>
+  
+  <button onclick="resetAll()">Svuota tutto</button>
+  
+  <script>
+    function getData() {
+      return JSON.parse(localStorage.getItem("ordiniGruppo") || '{"menu": "", "ordini": []}');
+    }
+    function setData(data) {
+      localStorage.setItem("ordiniGruppo", JSON.stringify(data));
+    }
+    function render() {
+      const data = getData();
+      document.getElementById("menuInput").value = data.menu;
+      let out = "";
+      data.ordini.forEach(o => {
+        out += o.nome + ": " + o.ordine + " ("+o.ora+")\n";
+      });
+      document.getElementById("ordiniText").textContent = out.trim() || "Nessun ordine ricevuto.";
+    }
+    document.getElementById("menuForm").onsubmit = function(e) {
+      e.preventDefault();
+      const nuovoMenu = document.getElementById("menuInput").value;
+      setData({ menu: nuovoMenu, ordini: [] });
+      render();
+    };
+    function resetAll() {
+      if(confirm("Sicuro di eliminare tutto?")) {
+        localStorage.setItem("ordiniGruppo", '{"menu":"","ordini":[]}');
+        render();
+      }
+    }
+    // aggiorna all’apertura
+    render();
+  </script>
+</body>
+</html>

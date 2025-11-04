@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Menù del giorno - Home</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    ul { list-style: none; padding-left: 0; }
+    li { margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Menù di oggi</h1>
+  <div id="menu"></div>
+  
+  <h2>Fai il tuo ordine</h2>
+  <form id="ordineForm">
+    Nome: <input id="nome" required size="15">
+    Ordine: <input id="ordine" required size="25">
+    <button type="submit">Invia</button>
+  </form>
+  
+  <h3>Ordini ricevuti:</h3>
+  <ul id="listaOrdini"></ul>
+  
+  <script>
+    function getData() {
+      return JSON.parse(localStorage.getItem("ordiniGruppo") || '{"menu": "", "ordini": []}');
+    }
+    function setData(data) {
+      localStorage.setItem("ordiniGruppo", JSON.stringify(data));
+    }
+    function render() {
+      const data = getData();
+      document.getElementById("menu").textContent = data.menu || "Menù non inserito";
+      const list = document.getElementById("listaOrdini");
+      list.innerHTML = '';
+      data.ordini.forEach(o => {
+        const li = document.createElement("li");
+        li.textContent = o.nome + ": " + o.ordine;
+        list.appendChild(li);
+      });
+    }
+    document.getElementById("ordineForm").onsubmit = function(e) {
+      e.preventDefault();
+      const data = getData();
+      data.ordini.push({
+        nome: document.getElementById("nome").value,
+        ordine: document.getElementById("ordine").value,
+        ora: (new Date()).toLocaleTimeString()
+      });
+      setData(data);
+      render();
+      this.reset();
+    };
+    // aggiorna lista all'apertura
+    render();
+  </script>
+</body>
+</html>
