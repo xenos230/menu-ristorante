@@ -2,59 +2,85 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Menù del giorno - Home</title>
+  <title>Menu del giorno - Ordina</title>
   <style>
     body { font-family: sans-serif; margin: 2em; }
+    form { margin-bottom: 2em; }
     ul { list-style: none; padding-left: 0; }
     li { margin-bottom: 5px; }
+    .ok { color: green; }
+    .err { color: red; }
   </style>
 </head>
 <body>
   <h1>Menù di oggi</h1>
-  <div id="menu"></div>
-  
+  <div id="menuSheet"></div>
+
   <h2>Fai il tuo ordine</h2>
   <form id="ordineForm">
-    Nome: <input id="nome" required size="15">
-    Ordine: <input id="ordine" required size="25">
+    Nome: <input name="nome" required>
+    Ordine: <input name="ordine" required>
     <button type="submit">Invia</button>
   </form>
-  
+  <div id="msgResult"></div>
+
   <h3>Ordini ricevuti:</h3>
-  <ul id="listaOrdini"></ul>
-  
-  <script>
-    function getData() {
-      return JSON.parse(localStorage.getItem("ordiniGruppo") || '{"menu": "", "ordini": []}');
-    }
-    function setData(data) {
-      localStorage.setItem("ordiniGruppo", JSON.stringify(data));
-    }
-    function render() {
-      const data = getData();
-      document.getElementById("menu").textContent = data.menu || "Menù non inserito";
-      const list = document.getElementById("listaOrdini");
-      list.innerHTML = '';
-      data.ordini.forEach(o => {
-        const li = document.createElement("li");
-        li.textContent = o.nome + ": " + o.ordine;
-        list.appendChild(li);
-      });
-    }
-    document.getElementById("ordineForm").onsubmit = function(e) {
-      e.preventDefault();
-      const data = getData();
-      data.ordini.push({
-        nome: document.getElementById("nome").value,
-        ordine: document.getElementById("ordine").value,
-        ora: (new Date()).toLocaleTimeString()
-      });
-      setData(data);
-      render();
-      this.reset();
-    };
-    // aggiorna lista all'apertura
-    render();
-  </script>
+  <div id="listaOrdini"></div>
+
+<script>
+const URL_API = "https://script.google.com/macros/s/AKfycbwDgThhPbcLXejr62QHSE1Dg99B3kmBTefHLQlYfyjjmF5JrnjEAeyGvbCKYyvRk1wTPA/exec";
+
+// Invio ordine
+document.getElementById("ordineForm").onsubmit = function(e) {
+  e.preventDefault();
+  const nome = this.nome.value.trim();
+  const ordine = this.ordine.value.trim();
+  if(!nome || !ordine) return;
+
+  fetch(URL_API, {
+    method: 'POST',
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({nome, ordine})
+  })
+  .then(r => r.text())
+  .then(txt => {
+    msg("Ordine inviato!", true);
+    this.reset();
+    aggiornaOrdini();
+  })
+  .catch(() => msg("Errore nell'invio. Riprova!", false));
+};
+
+// Aggiorna visualizzazione ordini
+function aggiornaOrdini() {
+  fetch(URL_API)
+    .then(r => r.json())
+    .then(dati => {
+      // Opzionale: Mostra il primo campo del foglio come "menu" se vuoi
+      if(dati.length>0) {
+        document.getElementById("menuSheet").innerHTML =
+          "<strong>" + (dati[0][0] || "Inserire il menù dal foglio!") + "</strong>";
+      }
+      // Lista ordini (salta eventuale prima riga se header)
+      let html = '<ul>';
+      for(let i=1; i<dati.length; i++) {
+        if(dati[i][0]) // solo se c'è un nome valido
+          html += `<li>${dati[i][0]}: ${dati[i][1]} <span style="color:#888;font-size:80%">(${dati[i][2]||''})</span></li>`;
+      }
+      html += '</ul>';
+      document.getElementById('listaOrdini').innerHTML = html;
+    });
+}
+
+function msg(testo, ok) {
+  const box = document.getElementById("msgResult");
+  box.textContent = testo;
+  box.className = ok ? "ok" : "err";
+  setTimeout(()=>{ box.textContent=""; }, 2500);
+}
+
+aggiornaOrdini();
+setInterval(aggiornaOrdini, 10000);
+</script>
 </body>
 </html>
