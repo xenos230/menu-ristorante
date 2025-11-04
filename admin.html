@@ -18,17 +18,17 @@
   <pre id="ordiniText">Caricamento...</pre>
 
 <script>
-const URL_API = "https://script.google.com/macros/s/AKfycbwDgThhPbcLXejr62QHSE1Dg99B3kmBTefHLQlYfyjjmF5JrnjEAeyGvbCKYyvRk1wTPA/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbyvAVwJI2gfUQFdGtp1ljm5XsDkIiVZj1M8M2EMX9VUlFUE-NvGdeExDVim9paoMQRGbw/exec";
 
 function aggiornaAdmin() {
   fetch(URL_API)
     .then(r => r.json())
     .then(dati => {
-      // Mostra menu (opzionale: dalla prima cella/riga)
-      document.getElementById("menuSheet").innerHTML = 
-        dati.length>0
-          ? "<b>Menù:</b> " + (dati[0][0] || "(Nessun menù inserito nel foglio)") 
-          : "";
+      // Mostra menu dalla prima cella/riga se vuoi usarla come "menù"
+      if(dati.length > 0 && dati[0][0])
+        document.getElementById("menuSheet").innerHTML = 
+          "<b>Menù:</b> " + dati[0][0];
+
       // Prepara lista ordini
       let testo = '';
       for(let i=1; i<dati.length; i++) {
