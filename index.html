@@ -37,10 +37,9 @@
       document.getElementById('counter').textContent = snap.numChildren();
     });
 
-    function canOrderNow() {
-      const h = new Date().getHours();
-      return h >= 0 && h < 12;
-    }
+   function canOrderNow() {
+  return true; // disattivato per test
+}
 
     document.getElementById('sendBtn').addEventListener('click', () => {
       if (!canOrderNow()) {
@@ -61,3 +60,4 @@
   </script>
 </body>
 </html>
+
