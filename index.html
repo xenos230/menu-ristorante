@@ -18,13 +18,14 @@
     <button type="submit">Invia</button>
   </form>
   <div id="result"></div>
-
   <h2>Ordini ricevuti:</h2>
   <div id="listaOrdini"></div>
 
-  <!-- Firebase CDN compatibile con Realtime Database -->
+  <!-- 1. Carica prima i Firebase SDK! -->
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database-compat.js"></script>
+
+  <!-- 2. Quindi il tuo script, in fondo al body! -->
   <script>
     // Configurazione Firebase aggiornata!
     const firebaseConfig = {
@@ -40,7 +41,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Invia ordine
     document.getElementById("ordineForm").onsubmit = function(e) {
       e.preventDefault();
       const nome = this.nome.value.trim();
@@ -55,9 +55,8 @@
         aggiornaOrdini();
       });
       this.reset();
-    }
+    };
 
-    // Visualizza ordini
     function aggiornaOrdini() {
       db.ref("ordini").once("value").then(snapshot => {
         let html = '<ul>';
@@ -70,8 +69,7 @@
       });
     }
     aggiornaOrdini();
-    setInterval(aggiornaOrdini, 8000); // aggiorna ogni 8 secondi
-
+    setInterval(aggiornaOrdini, 8000);
   </script>
 </body>
 </html>
