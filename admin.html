@@ -5,53 +5,47 @@
   <title>Admin - Menu & Ordini</title>
   <style>
     body { font-family: sans-serif; margin: 2em; }
-    textarea { width: 80%; height: 4em; }
     pre { background: #eee; padding: 1em; }
+    button { font-size: 1em; }
   </style>
 </head>
 <body>
-  <h1>Pannello Admin</h1>
-  <form id="menuForm">
-    Inserisci/Modifica menu del giorno:<br>
-    <textarea id="menuInput"></textarea><br>
-    <button type="submit">Salva menu (azzera ordini)</button>
-  </form>
-  
+  <h1>Pannello Admin (Copia ordini per il ristorante)</h1>
+  <div id="menuSheet"></div>
+
+  <button onclick="copia()">Copia tutto negli appunti!</button>
   <h3>Ordini ricevuti:</h3>
-  <pre id="ordiniText"></pre>
-  
-  <button onclick="resetAll()">Svuota tutto</button>
-  
-  <script>
-    function getData() {
-      return JSON.parse(localStorage.getItem("ordiniGruppo") || '{"menu": "", "ordini": []}');
-    }
-    function setData(data) {
-      localStorage.setItem("ordiniGruppo", JSON.stringify(data));
-    }
-    function render() {
-      const data = getData();
-      document.getElementById("menuInput").value = data.menu;
-      let out = "";
-      data.ordini.forEach(o => {
-        out += o.nome + ": " + o.ordine + " ("+o.ora+")\n";
-      });
-      document.getElementById("ordiniText").textContent = out.trim() || "Nessun ordine ricevuto.";
-    }
-    document.getElementById("menuForm").onsubmit = function(e) {
-      e.preventDefault();
-      const nuovoMenu = document.getElementById("menuInput").value;
-      setData({ menu: nuovoMenu, ordini: [] });
-      render();
-    };
-    function resetAll() {
-      if(confirm("Sicuro di eliminare tutto?")) {
-        localStorage.setItem("ordiniGruppo", '{"menu":"","ordini":[]}');
-        render();
+  <pre id="ordiniText">Caricamento...</pre>
+
+<script>
+const URL_API = "https://script.google.com/macros/s/AKfycbwDgThhPbcLXejr62QHSE1Dg99B3kmBTefHLQlYfyjjmF5JrnjEAeyGvbCKYyvRk1wTPA/exec";
+
+function aggiornaAdmin() {
+  fetch(URL_API)
+    .then(r => r.json())
+    .then(dati => {
+      // Mostra menu (opzionale: dalla prima cella/riga)
+      document.getElementById("menuSheet").innerHTML = 
+        dati.length>0
+          ? "<b>Menù:</b> " + (dati[0][0] || "(Nessun menù inserito nel foglio)") 
+          : "";
+      // Prepara lista ordini
+      let testo = '';
+      for(let i=1; i<dati.length; i++) {
+        if(dati[i][0]) // solo se nome valido
+          testo += `${dati[i][0]}: ${dati[i][1]} (${dati[i][2]||''})\n`;
       }
-    }
-    // aggiorna all’apertura
-    render();
-  </script>
+      document.getElementById('ordiniText').textContent = testo.trim() ? testo : "Nessun ordine ricevuto.";
+    });
+}
+
+function copia() {
+  navigator.clipboard.writeText(document.getElementById('ordiniText').textContent);
+  alert("Ordini copiati!");
+}
+
+aggiornaAdmin();
+setInterval(aggiornaAdmin, 10000);
+</script>
 </body>
 </html>
