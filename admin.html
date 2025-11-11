@@ -51,13 +51,6 @@
       margin-top: 10px;
     }
 
-    #aiHint {
-      margin-top: 10px;
-      font-style: italic;
-      color: #555;
-      white-space: pre-wrap;
-    }
-
     @media screen and (max-width: 480px) {
       body {
         padding: 10px;
@@ -85,8 +78,7 @@
   <select id="selectDate"></select>
   <p>Totale ordini: <span id="countAdmin">0</span></p>
   <pre id="ordersList">(nessun ordine)</pre>
-  <button id="copyBtn">Copia ordini</button>
-  <p id="aiHint"></p>
+  <button id="copyBtn">Copia solo i piatti</button>
 
   <script>
     const firebaseConfig = {
@@ -144,14 +136,15 @@
     select.addEventListener('change', () => loadOrders(select.value));
 
     document.getElementById('copyBtn').addEventListener('click', () => {
-      const ordersText = document.getElementById('ordersList').textContent;
-      const aiInstructions =
-        'Togli i nomi e conta le cose simili scritte e prepara un testo per effettuare un ordine con ad esempio:\nx3 piatto1\nx2 piatto2\nx5 pizza';
-      const fullText = ordersText + '\n\n' + aiInstructions;
+      const selectedDate = document.getElementById('selectDate').value;
+      const ordersRef = db.ref('orders/' + selectedDate);
 
-      navigator.clipboard.writeText(fullText).then(() => {
-        alert('Ordini + istruzioni copiati negli appunti');
-        document.getElementById('aiHint').textContent = aiInstructions;
+      ordersRef.once('value').then(snap => {
+        const o = snap.val() || {};
+        const onlyOrders = Object.values(o).map(it => it.order).join('\n');
+        navigator.clipboard.writeText(onlyOrders).then(() => {
+          alert('Solo i piatti copiati negli appunti');
+        });
       });
     });
 
