@@ -55,6 +55,15 @@
       font-weight: bold;
     }
 
+    /* Stile per la nuova immagine */
+    .menu-image {
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+      margin-top: 20px;
+      display: block;
+    }
+
     @media screen and (max-width: 480px) {
       body {
         padding: 10px;
@@ -83,6 +92,8 @@
   </div>
 
   <p>Persone al tavolo: <span id="counter">0</span></p>
+
+  <img src="https://i.imgur.com/8mUeN9r.png" alt="Menu Image" class="menu-image">
 
   <script>
     const firebaseConfig = {
